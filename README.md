@@ -31,7 +31,7 @@ In the following list, the minimum versions required (if any) by the library are
 | :--------------------------- | :-------------------------------------- |:-------------: |
 | [gcc][gcc-link]              | Compile                                 |11.4            |
 | [git][git-link]              | Download GitHub dependencies            |2.34.1          |
-| [glibc][glibc-link]          | Download GitHub dependencies            |2.34.1          |
+| [glibc][glibc-link]          | Download GitHub dependencies            |2.35            |
 
 
 [gcc-link]:        https://gcc.gnu.org/
