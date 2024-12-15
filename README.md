@@ -1,4 +1,4 @@
-# C_Threads_Tutorial: a series of lessons on C language's threads 
+# C_Threads_Tutorial: a series of lessons on C language's threads 🧵
 This project is centered around threads, one of the most powerful C language's features.
 
 
@@ -30,11 +30,13 @@ In the following list, the minimum versions required (if any) by the library are
 | Dependency                   | Purpose                                 | Minimum version |
 | :--------------------------- | :-------------------------------------- |:-------------: |
 | [gcc][gcc-link]              | Compile                                 |11.4            |
-| [Git][git-link]              | Download GitHub dependencies            |2.34.1          |
+| [git][git-link]              | Download GitHub dependencies            |2.34.1          |
+| [glibc][glibc-link]          | Download GitHub dependencies            |2.34.1          |
 
 
 [gcc-link]:        https://gcc.gnu.org/
 [git-link]:        https://git-scm.com/
+[glibc-link]:      https://www.gnu.org/software/libc/
 
 ## Usage
 First, enter the local repo path and create a directory to store executable files (let's say it's called "exe").
