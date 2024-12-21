@@ -38,7 +38,7 @@ In the following list, the minimum versions required (if any) by the library are
 [git-link]:        https://git-scm.com/
 [glibc-link]:      https://www.gnu.org/software/libc/
 
-## Usage
+## Usage 🖱️
 First, enter the local repo path and create a directory to store executable files (let's say it's called _exe_).
 The local repository directory should be left as follows:
 
