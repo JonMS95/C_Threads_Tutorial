@@ -31,7 +31,7 @@ In the following list, the minimum versions required (if any) by the library are
 | :--------------------------- | :-------------------------------------- |:-------------: |
 | [gcc][gcc-link]              | Compile                                 |11.4            |
 | [git][git-link]              | Download GitHub dependencies            |2.34.1          |
-| [glibc][glibc-link]          | Download GitHub dependencies            |2.35            |
+| [glibc][glibc-link]          | Interact with the OS                    |2.35            |
 
 
 [gcc-link]:        https://gcc.gnu.org/
@@ -39,7 +39,7 @@ In the following list, the minimum versions required (if any) by the library are
 [glibc-link]:      https://www.gnu.org/software/libc/
 
 ## Usage
-First, enter the local repo path and create a directory to store executable files (let's say it's called "exe").
+First, enter the local repo path and create a directory to store executable files (let's say it's called _exe_).
 The local repository directory should be left as follows:
 
 Again, the one below is the path to the generated executable file:
