@@ -26,6 +26,7 @@ commands as a reference (provided repo directory has been entered first):
 #include "ThreadsWithAttributes.h"
 #include "ThreadsWithLocalStorage.h"
 #include "ThreadsDetachment.h"
+#include "MatrixMultiplication.h"
 
 /**************************************/
 
@@ -45,6 +46,7 @@ commands as a reference (provided repo directory has been entered first):
 #define MSG_TEST_THREADS_WITH_ATTRIBUTES            "Testing threads with attributes."
 #define MSG_TEST_THREADS_WITH_LOCAL_STORAGE         "Testing threads with local storage."
 #define MSG_TEST_THREADS_DETACH                     "Testing detached threads."
+#define MSG_TEST_EXAMPLE_MATRIX_MULTIPLICATION      "Example: matrix multiplication using multiple threads."
 #define MSG_TEST_FOOTER_CHAR                        '-'
 
 #define TIME_BETWEEN_FUNCTION_CALLS                 1
@@ -79,19 +81,20 @@ static void executeTestFunction(const char* test_text, void(*test_function)(void
 
 int main()
 {
-    executeTestFunction(MSG_TEST_BASIC_THREADS                      , basicThreadUsingFunction          );
-    executeTestFunction(MSG_TEST_THREADS_WITH_INPUT_PARAMETERS      , functionUsingThreadWithParameters );
-    executeTestFunction(MSG_TEST_THREADS_WITH_MUTEX                 , functionUsingThreadWithoutMutex   );
-    executeTestFunction(MSG_TEST_THREADS_WITH_TRYLOCK               , threadsWithTryLock                );
-    executeTestFunction(MSG_TEST_THREADS_WITH_TIMED_MUTEX           , functionUsingThreadWithTimedMutex );
-    executeTestFunction(MSG_TEST_THREADS_CANCELLATION               , threadsCancellation               );
-    executeTestFunction(MSG_TEST_THREADS_WITH_BARRIER               , threadsWithBarrier                );
-    executeTestFunction(MSG_TEST_THREADS_WITH_CONDITION_VARIABLES   , threadsWithConditionVariables     );
-    executeTestFunction(MSG_TEST_THREADS_WITH_TIMED_WAIT            , functionUsingThreadWithTimedWait  );
-    executeTestFunction(MSG_TEST_THREADS_WITH_SEMAPHORES            , threadsWithSemaphores             );
-    executeTestFunction(MSG_TEST_THREADS_WITH_ATTRIBUTES            , threadsWithAttributes             );
-    executeTestFunction(MSG_TEST_THREADS_WITH_LOCAL_STORAGE         , threadsWithLocalStorage           );
-    executeTestFunction(MSG_TEST_THREADS_DETACH                     , threadsDetachment                 );
+    // executeTestFunction(MSG_TEST_BASIC_THREADS                      , basicThreadUsingFunction          );
+    // executeTestFunction(MSG_TEST_THREADS_WITH_INPUT_PARAMETERS      , functionUsingThreadWithParameters );
+    // executeTestFunction(MSG_TEST_THREADS_WITH_MUTEX                 , functionUsingThreadWithoutMutex   );
+    // executeTestFunction(MSG_TEST_THREADS_WITH_TRYLOCK               , threadsWithTryLock                );
+    // executeTestFunction(MSG_TEST_THREADS_WITH_TIMED_MUTEX           , functionUsingThreadWithTimedMutex );
+    // executeTestFunction(MSG_TEST_THREADS_CANCELLATION               , threadsCancellation               );
+    // executeTestFunction(MSG_TEST_THREADS_WITH_BARRIER               , threadsWithBarrier                );
+    // executeTestFunction(MSG_TEST_THREADS_WITH_CONDITION_VARIABLES   , threadsWithConditionVariables     );
+    // executeTestFunction(MSG_TEST_THREADS_WITH_TIMED_WAIT            , functionUsingThreadWithTimedWait  );
+    // executeTestFunction(MSG_TEST_THREADS_WITH_SEMAPHORES            , threadsWithSemaphores             );
+    // executeTestFunction(MSG_TEST_THREADS_WITH_ATTRIBUTES            , threadsWithAttributes             );
+    // executeTestFunction(MSG_TEST_THREADS_WITH_LOCAL_STORAGE         , threadsWithLocalStorage           );
+    // executeTestFunction(MSG_TEST_THREADS_DETACH                     , threadsDetachment                 );
+    executeTestFunction(MSG_TEST_EXAMPLE_MATRIX_MULTIPLICATION      , exampleMatrixMultiplication       );
 
     return 0;
 }
