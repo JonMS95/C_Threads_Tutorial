@@ -23,6 +23,7 @@
 #define MAX_MAT_VAL     10
 #define MAT_NAME_HEADER "Matrix "
 #define MAT_HEADER_SEP  '.'
+#define MAT_DELIM_SIZE  5
 
 /**************************************/
 
@@ -58,6 +59,8 @@ static int      getDelimitedRandomInteger(int min_val, int max_val);
 static int**    populateRandomValuesMatrix(int** mat, unsigned int mat_rows, unsigned int mat_cols, int min_val, int max_val);
 static int**    createRandomValuesMatrix(unsigned int rows, unsigned int cols, int min_val, int max_val);
 static void     deallocateMatrix(int** mat, unsigned int rows);
+static int      multiplyRowByColumn(int** A, int** B, unsigned int A_cols, unsigned int row_A, unsigned int col_B);
+static void*    matrixMultThreadRoutine(void* arg);
 static void     printMatrix(int** mat, unsigned int rows, unsigned int cols, char* matrix_name, char* color);
 
 /**************************************/
@@ -160,7 +163,7 @@ static void* matrixMultThreadRoutine(void* arg)
                                                 p_matrix_mult_data->target_row_A                            ,
                                                 p_matrix_mult_data->target_col_B                            );
     
-    // Write the calculated value onto the resulting matrix.
+    // Write the calculated value onto the resulting matrix, making sure just a single thread modifies it at a each time.
     pthread_mutex_lock(p_matrix_mult_data->p_matrix_mult_common_data->p_mutex_C);
 
     p_matrix_mult_data->p_matrix_mult_common_data->mat_C[p_matrix_mult_data->target_row_A][p_matrix_mult_data->target_col_B] = calculated_value;
@@ -181,14 +184,34 @@ static void printMatrix(int** mat, unsigned int rows, unsigned int cols, char* m
 
     printf("%s%s%s\r\n", color, mat_header, PRINT_COLOR_RESET);
 
+    char* mat_delimiter;
+
     for(unsigned int row = 0; row < rows; row++)
     {
-        printf("%s[\t%s", color, PRINT_COLOR_RESET);
+        mat_delimiter = "|";
+
+        if(rows == 1)
+            mat_delimiter = "[";
+        else if(row == 0)
+            mat_delimiter = "⌈";
+        else if(row == (rows - 1))
+            mat_delimiter = "⌊";
+
+        printf("%s%s\t%s", color, mat_delimiter, PRINT_COLOR_RESET);
 
         for(unsigned int col = 0; col < cols; col++)
             printf("%s%d%s\t", color, mat[row][col], PRINT_COLOR_RESET);
 
-        printf("%s]%s\r\n", color, PRINT_COLOR_RESET);
+        mat_delimiter = "|";
+
+        if(rows == 1)
+            mat_delimiter = "]";
+        else if(row == 0)
+            mat_delimiter = "⌉";
+        else if(row == (rows - 1))
+            mat_delimiter = "⌋";
+
+        printf("%s%s%s\r\n", color, mat_delimiter, PRINT_COLOR_RESET);
     }
 
     printf("\r\n");
@@ -230,19 +253,14 @@ void exampleMatrixMultiplication()
     }
 
     // Allocate common multiplication data.
-    MATRIX_MULT_COMMON_DATA* matrix_mult_common_data = (MATRIX_MULT_COMMON_DATA*)malloc(sizeof(MATRIX_MULT_COMMON_DATA)); 
-    
-    if(matrix_mult_common_data == NULL)
+    MATRIX_MULT_COMMON_DATA matrix_mult_common_data = 
     {
-        printf("%sCould not allocate matrix common data!%s\r\n", PRINT_COLOR_RED, PRINT_COLOR_RESET);
-        return;
-    }
-
-    matrix_mult_common_data->mat_A      = mat_A         ;
-    matrix_mult_common_data->mat_B      = mat_B         ;
-    matrix_mult_common_data->mat_C      = mat_C         ;
-    matrix_mult_common_data->mat_A_cols = mat_A_cols    ;
-    matrix_mult_common_data->p_mutex_C  = &mat_C_lock   ;
+        .mat_A      = mat_A         ,
+        .mat_B      = mat_B         ,
+        .mat_C      = mat_C         ,
+        .mat_A_cols = mat_A_cols    ,
+        .p_mutex_C  = &mat_C_lock   ,
+    };
 
     // Initialize C matrix mutex lock.
     pthread_mutex_init(&mat_C_lock, NULL);
@@ -250,7 +268,7 @@ void exampleMatrixMultiplication()
     // Prepare data given as each thread's input parameter and launch them.
     for(unsigned int thread_idx = 0; thread_idx < threads_num; thread_idx++)
     {
-        matrix_mult_data_arr[thread_idx].p_matrix_mult_common_data = matrix_mult_common_data;
+        matrix_mult_data_arr[thread_idx].p_matrix_mult_common_data = &matrix_mult_common_data;
         matrix_mult_data_arr[thread_idx].target_row_A = (thread_idx / mat_C_cols);
         matrix_mult_data_arr[thread_idx].target_col_B = (thread_idx % mat_C_cols);
 
@@ -281,7 +299,6 @@ void exampleMatrixMultiplication()
 
     // Free memory used to store pthread_t and MATRIX_MULT_DATA type variables.
     free(threads);
-    free(matrix_mult_common_data);
     free(matrix_mult_data_arr);
 
     // Destroy mutex lock.
