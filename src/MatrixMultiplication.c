@@ -7,6 +7,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sched.h>
 #include <time.h>
 #include <string.h>
 #include "ThreadColors.h"
@@ -60,8 +61,9 @@ static int**    populateRandomValuesMatrix(int** mat, unsigned int mat_rows, uns
 static int**    createRandomValuesMatrix(unsigned int rows, unsigned int cols, int min_val, int max_val);
 static void     deallocateMatrix(int** mat, unsigned int rows);
 static int      multiplyRowByColumn(int** A, int** B, unsigned int A_cols, unsigned int row_A, unsigned int col_B);
-static void*    matrixMultThreadRoutine(void* arg);
 static void     printMatrix(int** mat, unsigned int rows, unsigned int cols, char* matrix_name, char* color);
+static int      setAttr(pthread_attr_t* p_attr, int scheduling_policy, struct sched_param* scheduling_priority, int schdueling_policy_inheritance);
+static void*    matrixMultThreadRoutine(void* arg);
 
 /**************************************/
 
@@ -149,30 +151,6 @@ static int multiplyRowByColumn(int** A, int** B, unsigned int A_cols, unsigned i
     return ret;
 }
 
-static void* matrixMultThreadRoutine(void* arg)
-{
-    // Make the thread cancellable (deferred).
-    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-    pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL);
-
-    MATRIX_MULT_DATA* p_matrix_mult_data = (MATRIX_MULT_DATA*)arg;
-
-    int calculated_value = multiplyRowByColumn( p_matrix_mult_data->p_matrix_mult_common_data->mat_A        ,
-                                                p_matrix_mult_data->p_matrix_mult_common_data->mat_B        ,
-                                                p_matrix_mult_data->p_matrix_mult_common_data->mat_A_cols   ,
-                                                p_matrix_mult_data->target_row_A                            ,
-                                                p_matrix_mult_data->target_col_B                            );
-    
-    // Write the calculated value onto the resulting matrix, making sure just a single thread modifies it at a each time.
-    pthread_mutex_lock(p_matrix_mult_data->p_matrix_mult_common_data->p_mutex_C);
-
-    p_matrix_mult_data->p_matrix_mult_common_data->mat_C[p_matrix_mult_data->target_row_A][p_matrix_mult_data->target_col_B] = calculated_value;
-
-    pthread_mutex_unlock(p_matrix_mult_data->p_matrix_mult_common_data->p_mutex_C);
-
-    return NULL;
-}
-
 static void printMatrix(int** mat, unsigned int rows, unsigned int cols, char* matrix_name, char* color)
 {
     printf("%s%s%s%s\r\n", color, MAT_NAME_HEADER, matrix_name, PRINT_COLOR_RESET);
@@ -217,6 +195,58 @@ static void printMatrix(int** mat, unsigned int rows, unsigned int cols, char* m
     printf("\r\n");
 }
 
+static int setAttr(pthread_attr_t* p_attr, int scheduling_policy, struct sched_param* scheduling_priority, int schdueling_policy_inheritance)
+{
+    int err;
+
+    // Set scheduling policy
+    if((err = pthread_attr_setschedpolicy(p_attr, scheduling_policy)))
+    {
+        printf("Error setting scheduling policy: %s\r\n", strerror(err));
+        return err;
+    }
+
+    // Set scheduling priority
+    if((err = pthread_attr_setschedparam(p_attr, scheduling_priority)))
+    {
+        printf("Error setting scheduling parameter: %s\r\n", strerror(err));
+        return err;
+    }
+
+    // Set explicit scheduling to override inherited scheduling
+    if((err = pthread_attr_setinheritsched(p_attr, schdueling_policy_inheritance)))
+    {
+        printf("Error setting inherit scheduling at line : %s\r\n", strerror(err));
+        return err;
+    }
+
+    return err;
+}
+
+static void* matrixMultThreadRoutine(void* arg)
+{
+    // Make the thread cancellable (deferred).
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+    pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL);
+
+    MATRIX_MULT_DATA* p_matrix_mult_data = (MATRIX_MULT_DATA*)arg;
+
+    int calculated_value = multiplyRowByColumn( p_matrix_mult_data->p_matrix_mult_common_data->mat_A        ,
+                                                p_matrix_mult_data->p_matrix_mult_common_data->mat_B        ,
+                                                p_matrix_mult_data->p_matrix_mult_common_data->mat_A_cols   ,
+                                                p_matrix_mult_data->target_row_A                            ,
+                                                p_matrix_mult_data->target_col_B                            );
+    
+    // Write the calculated value onto the resulting matrix, making sure just a single thread modifies it at a each time.
+    pthread_mutex_lock(p_matrix_mult_data->p_matrix_mult_common_data->p_mutex_C);
+
+    p_matrix_mult_data->p_matrix_mult_common_data->mat_C[p_matrix_mult_data->target_row_A][p_matrix_mult_data->target_col_B] = calculated_value;
+
+    pthread_mutex_unlock(p_matrix_mult_data->p_matrix_mult_common_data->p_mutex_C);
+
+    return NULL;
+}
+
 void exampleMatrixMultiplication()
 {
     // Initilize time seed for random values to be properly generated.
@@ -236,12 +266,37 @@ void exampleMatrixMultiplication()
     int** mat_B = createRandomValuesMatrix(mat_B_rows, mat_B_cols, MIN_MAT_VAL, MAX_MAT_VAL);
     int** mat_C = allocateMatrix(mat_C_rows, mat_C_cols);
 
+    if(mat_A == NULL || mat_B == NULL || mat_C == NULL)
+    {
+        printf("%sAt least one of the required matrices could not be properly allocated, so procedure cannot go on.%s\r\n",
+                PRINT_COLOR_RED     ,
+                PRINT_COLOR_RESET   );
+        return;
+    }
+
     // Create threads, one for each element in the resulting matrix.
     unsigned int threads_num = mat_C_rows * mat_C_cols;
     pthread_t* threads = (pthread_t*)malloc(threads_num * sizeof(pthread_t*));
 
     // Create a mutex, so that only a single thread writes on the resulting matrix each time.
     pthread_mutex_t mat_C_lock;
+
+    // Initialize a variable holding the common scheduling type as well as priority (Round-Robin, maximum priority).
+    int scheduling_policy = SCHED_RR;
+    struct sched_param scheduling_priority = { .sched_priority = sched_get_priority_max(scheduling_policy) };
+    
+    // Set previously specified attributes.
+    pthread_attr_t attr;
+
+    int set_attr_status = setAttr(&attr, scheduling_policy, &scheduling_priority, PTHREAD_EXPLICIT_SCHED);
+
+    if(set_attr_status < 0)
+    {
+        printf("%sCommon attributes holding variable could not be properly set, so the procedure cannot go on.\r\n%s",
+                PRINT_COLOR_RED     ,
+                PRINT_COLOR_RESET   );
+        return;
+    }
 
     // For each thread, allocate its data structure.
     MATRIX_MULT_DATA* matrix_mult_data_arr = (MATRIX_MULT_DATA*)malloc(threads_num * sizeof(MATRIX_MULT_DATA));
@@ -265,6 +320,9 @@ void exampleMatrixMultiplication()
     // Initialize C matrix mutex lock.
     pthread_mutex_init(&mat_C_lock, NULL);
 
+    // Initialize thread common attributes holding variable.
+    pthread_attr_init(&attr);
+
     // Prepare data given as each thread's input parameter and launch them.
     for(unsigned int thread_idx = 0; thread_idx < threads_num; thread_idx++)
     {
@@ -272,7 +330,7 @@ void exampleMatrixMultiplication()
         matrix_mult_data_arr[thread_idx].target_row_A = (thread_idx / mat_C_cols);
         matrix_mult_data_arr[thread_idx].target_col_B = (thread_idx % mat_C_cols);
 
-        if(checkThreadCreationStatus( pthread_create(&threads[thread_idx], NULL, matrixMultThreadRoutine, &matrix_mult_data_arr[thread_idx]) ))
+        if(checkThreadCreationStatus( pthread_create(&threads[thread_idx], &attr, matrixMultThreadRoutine, &matrix_mult_data_arr[thread_idx]) ))
         {
             printf("%sCould not create thread %d (element at C[%d][%d]). Aborting matrix multiplication.%s\r\n",
                     PRINT_COLOR_RED,
@@ -303,6 +361,9 @@ void exampleMatrixMultiplication()
 
     // Destroy mutex lock.
     pthread_mutex_destroy(&mat_C_lock);
+
+    // Destroy thread common attributes.
+    pthread_attr_destroy(&attr);
 
     // Free memory previously allocated for each matrix.
     deallocateMatrix(mat_A, mat_A_rows);
