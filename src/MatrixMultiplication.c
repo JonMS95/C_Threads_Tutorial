@@ -1,5 +1,12 @@
 /*
+In this example, a couple of matrices are going to be multiplied, giving a third matrix as result. Every element in the resulting
+matrix will be calculated by a thread. Thus, if the outcoming matrix size was 3x2 (6 elements), six threads would run in
+parallel for those element values to be calculated.
 
+Note that even if not strictly necessary, a mutex lock is used so that only a single thread is able to modify the resulting
+matrix each time.
+
+Disclaimer: this may not be the most efficient approach, yet it may be good enough for educational purposes.
 */
 
 /********* Include statements *********/
