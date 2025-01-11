@@ -62,7 +62,7 @@ gcc -lpthread -D_XOPEN_SOURCE=700 src/* -o exe/main
 Once it's done, reading each lesson's summary before executing the resulting file is strongly encouraged, so it's easier to grasp all the nuances. Enjoy!
 
 ## To do <a id="to-do"></a> ☑️
-- [ ] Add practical examples (such as multi-threaded matrix multiplication or KNN algorithm implementation).
+- [ ] Add more practical examples (such as KNN algorithm implementation).
 
 ## Related Documents <a id="related-documents"></a> 🗄️
 * [LICENSE](LICENSE)
